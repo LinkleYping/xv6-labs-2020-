@@ -81,7 +81,18 @@ int
 sys_pgaccess(void)
 {
   // lab pgtbl: your code here.
-  return 0;
+  uint64 va; // start va
+  int n; // number of pages
+  uint64 masks; // a user address to a buffer to store the results into a bitmask
+  if(argaddr(0, &va) < 0)
+    return -1;
+  if(argint(1, &n))
+    return -1;
+  if(argaddr(2, &masks) < 0)
+    return -1;
+  if(n > 32)
+    return -1;
+  return pgaccess(va, n, masks);
 }
 #endif
 

@@ -682,3 +682,21 @@ procdump(void)
     printf("\n");
   }
 }
+
+int pgaccess(uint64 va, int n, uint64 mask)
+{
+  struct proc *p = myproc();
+  pagetable_t pagetable = p->pagetable;
+  uint64 a = PGROUNDDOWN(va);
+  unsigned int ans = 0;
+  for(int i = 0; i < n; i++){
+    pte_t *pte;
+    pte = walk(pagetable, a, 0);
+    if(pte && (*pte & PTE_A)){
+      ans |= 1 << i;
+      *pte ^= PTE_A;
+    }
+    a = a + PGSIZE;
+  }
+  return copyout(pagetable, mask, (char *)&ans, sizeof(int));
+}
