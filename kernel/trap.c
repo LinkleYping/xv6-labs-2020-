@@ -49,8 +49,8 @@ usertrap(void)
   
   // save user program counter.
   p->trapframe->epc = r_sepc();
-  
-  if(r_scause() == 8){
+  uint64 cause = r_scause();
+  if(cause == 8){
     // system call
 
     if(p->killed)
@@ -65,8 +65,17 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } else if((which_dev = devintr()) != 0){
+  }else if((which_dev = devintr()) != 0){
     // ok
+  }else if(cause == 15 || cause == 13){
+    uint64 va_p = r_stval();
+
+    uint64 va = PGROUNDDOWN(va_p);
+    pagetable_t pagetable = p->pagetable;
+    if(va_p >= p->sz
+      || cowpage(pagetable, va) != 0
+      || cowalloc(pagetable, va) == 0) // COW fork
+        p->killed = 1;
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
